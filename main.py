@@ -96,10 +96,10 @@ class proj_db_System:
         self.exi_img1=ImageTk.PhotoImage(exi_img_btn)
 
         exi_b1 = Button(bg_img,command=self.Close,image=self.exi_img1,cursor="hand2",)
-        exi_b1.place(x=940,y=330,width=180,height=180)
+        exi_b1.place(x=480,y=330,width=180,height=180)
 
         exi_b1_1 = Button(bg_img,command=self.Close,text="Exit",cursor="hand2",font=("tahoma",15,"bold"),bg="white",fg="navyblue")
-        exi_b1_1.place(x=940,y=510,width=180,height=45)
+        exi_b1_1.place(x=480,y=510,width=180,height=45)
 
 # ==================Funtion for Open Images Folder==================
     def open_img(self):
@@ -124,12 +124,6 @@ class proj_db_System:
     def Close(self):
         root.destroy()
     
-    
-
-
-
-
-
 if __name__ == "__main__":
     root=Tk()
     obj=proj_db_System(root)

@@ -1,15 +1,19 @@
 from tkinter import* 
 from tkinter import ttk
-from PIL import Image,ImageTk
+
+from PIL import ImageTk
 from tkinter import messagebox
+import re
 import mysql.connector
+
 
 class Register:
     def __init__(self,root):
         self.root=root
         self.root.title("Register")
-        self.root.geometry("1366x768+0+0")
 
+        self.root.geometry("1366x768+0+0")
+      
         # ============ Variables =================
         self.var_fname=StringVar()
         self.var_lname=StringVar()
@@ -27,15 +31,7 @@ class Register:
         lb1_bg.place(x=0,y=0, relwidth=1,relheight=1)
 
         frame= Frame(self.root,bg="#F2F2F2")
-        frame.place(x=100,y=80,width=900,height=580)
-        
-
-        # img1=Image.open(r"Images_GUI/reg1.png")
-        # img1=img1.resize((450,100),Image.Resampling.LANCZOS)
-        # self.photoimage1=ImageTk.PhotoImage(img1)
-        # lb1img1 = Label(image=self.photoimage1,bg="#F2F2F2")
-        # lb1img1.place(x=300,y=100, width=500,height=100)
-        
+        frame.place(x=100,y=80,width=900,height=580)        
 
         get_str = Label(frame,text="Registration",font=("times new roman",30,"bold"),fg="#002B53",bg="#F2F2F2")
         get_str.place(x=350,y=130)
@@ -122,50 +118,81 @@ class Register:
 
 
         # Creating Button Register
-        loginbtn=Button(frame,command=self.reg,text="Register",font=("times new roman",15,"bold"),bd=0,relief=RIDGE,fg="#fff",bg="#002B53",activeforeground="white",activebackground="#007ACC")
+        loginbtn=Button(frame,command=self.reg,text="Register", cursor='hand2', font=("times new roman",15,"bold"),bd=0,relief=RIDGE,fg="#fff",bg="#002B53",activeforeground="white",activebackground="#007ACC")
         loginbtn.place(x=103,y=510,width=270,height=35)
 
-        # Creating Button Login
-        loginbtn=Button(frame,text="Login",font=("times new roman",15,"bold"),bd=0,relief=RIDGE,fg="#fff",bg="#002B53",activeforeground="white",activebackground="#007ACC")
-        loginbtn.place(x=533,y=510,width=270,height=35)
-
-
-
-
+    def validate_password(self, password):
+        if len(password) < 6:
+            return "Password must be at least 6 characters long."
+        if not re.search(r'[A-Z]', password):
+            return "Password must contain at least one uppercase letter."
+        if not re.search(r'[a-z]', password):
+            return "Password must contain at least one lowercase letter."
+        if not re.search(r'[0-9]', password):
+            return "Password must contain at least one digit."
+        if not re.search(r'[@$!%*?&]', password):
+            return "Password must contain at least one special character."
+        return None
+  
     def reg(self):
+        # regExp
+        email_regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        # check for empty field
         if (self.var_fname.get()=="" or self.var_lname.get()=="" or self.var_cnum.get()=="" or self.var_email.get()=="" or self.var_ssq.get()=="Select" or self.var_sa.get()=="" or self.var_pwd.get()=="" or self.var_cpwd.get()==""):
             messagebox.showerror("Error","All Field Required!")
-        elif(self.var_pwd.get() != self.var_cpwd.get()):
-            messagebox.showerror("Error","Please Enter Password & Confirm Password are Same!")
-        elif(self.var_check.get()==0):
-            messagebox.showerror("Error","Please Check the Agree Terms and Conditons!")
-        else:
-            # messagebox.showinfo("Successfully","Successfully Register!")
-            try:
-                conn = mysql.connector.connect(user='root', password='root',host='localhost',database='proj_db',port=8889)
-                mycursor = conn.cursor()
-                query=("select * from regteach where email=%s")
-                value=(self.var_email.get(),)
-                mycursor.execute(query,value)
-                row=mycursor.fetchone()
-                if row!=None:
-                    messagebox.showerror("Error","User already exist,please try another email")
-                else:
-                    mycursor.execute("insert into regteach values(%s,%s,%s,%s,%s,%s,%s)",(
-                    self.var_fname.get(),
-                    self.var_lname.get(),
-                    self.var_cnum.get(),
-                    self.var_email.get(),
-                    self.var_ssq.get(),
-                    self.var_sa.get(),
-                    self.var_pwd.get()
-                    ))
 
-                    conn.commit()
-                    conn.close()
-                    messagebox.showinfo("Success","Successfully Registerd!",parent=self.root)
-            except Exception as es:
-                messagebox.showerror("Error",f"Due to: {str(es)}",parent=self.root)
+            # check for number in name
+        elif any(char.isdigit() for char in self.var_fname.get()):
+            messagebox.showerror("Error", "First Name should not contain numbers!")
+        elif any(char.isdigit() for char in self.var_lname.get()):
+            messagebox.showerror("Error", "Last Name should not contain numbers!")
+       
+    #    mobile number validation
+        elif not self.var_cnum.get().isdigit() or len(self.var_cnum.get()) != 10:
+            messagebox.showerror("Error", "Invalid Contact Number! It should be a 10-digit number.")
+
+    #       email validation
+        elif not re.match(email_regex, self.var_email.get()):
+            messagebox.showerror("Error", "Invalid Email Address!")
+        
+    #       password validation
+        else:
+            pwd_error = self.validate_password(self.var_pwd.get())
+            if pwd_error:
+                messagebox.showerror("Plaease enter strong password(a combination of uppercase,lowercase,special characters and numbers) with atleast 6 characters!", pwd_error)
+            elif self.var_pwd.get() != self.var_cpwd.get():
+                messagebox.showerror("Error", "Password and Confirm Password must match!")
+
+            # checkbox validation
+            elif self.var_check.get() == 0:
+                messagebox.showerror("Error", "Please agree to the terms and conditions!")
+            else:
+                try:
+                    conn = mysql.connector.connect(user='root', password='root',host='127.0.0.1',database='proj_db',port=3306)
+                    mycursor = conn.cursor()
+                    query=("select * from regteach where email=%s")
+                    value=(self.var_email.get(),)
+                    mycursor.execute(query,value)
+                    row=mycursor.fetchone()
+                    if row!=None:
+                        messagebox.showerror("Error","User already exist,please try another email")
+                    else:
+                        mycursor.execute("insert into regteach values(%s,%s,%s,%s,%s,%s,%s)",(
+                        self.var_fname.get(),
+                        self.var_lname.get(),
+                        self.var_cnum.get(),
+                        self.var_email.get(),
+                        self.var_ssq.get(),
+                        self.var_sa.get(),
+                        self.var_pwd.get()
+                        ))
+
+                        conn.commit()
+                        conn.close()
+                        messagebox.showinfo("Success","Successfully Registerd!",parent=self.root)
+                except Exception as es:
+                    messagebox.showerror("Error",f"Due to: {str(es)}",parent=self.root)
+
 
 
 

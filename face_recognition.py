@@ -65,7 +65,7 @@ class Face_Recognition:
 
             if((i not in name_list)) and ((r not in name_list)) and ((n not in name_list)):
                 now=datetime.now()
-                d1=now.strftime("%d/%m/%Y")
+                d1=now.strftime("%Y-%m-%d")
                 dtString=now.strftime("%H:%M:%S")
                 f.writelines(f'\n{i}, {r}, {n}, {dtString}, {d1}, Present')
                 #f.writelines(f'\n{name},{dtString}')

@@ -91,13 +91,6 @@ class Attendance:
         student_name_entry = ttk.Entry(left_frame,textvariable=self.var_name,width=15,font=("verdana",12,"bold"))
         student_name_entry.grid(row=1,column=1,padx=5,pady=5,sticky=W)
 
-        #Department
-        # dep_label = Label(left_frame,text="Department:",font=("verdana",12,"bold"),fg="navyblue",bg="white")
-        # dep_label.grid(row=1,column=2,padx=5,pady=5,sticky=W)
-
-        # dep_entry = ttk.Entry(left_frame,textvariable=self.var_dep,width=15,font=("verdana",12,"bold"))
-        # dep_entry.grid(row=1,column=3,padx=5,pady=5,sticky=W)
-
         #time
         time_label = Label(left_frame,text="Time:",font=("verdana",12,"bold"),fg="navyblue",bg="white")
         time_label.grid(row=1,column=2,padx=5,pady=5,sticky=W)
@@ -172,8 +165,8 @@ class Attendance:
         update_btn=Button(btn_frame,command=self.exportCsv,text="Export CSV",width=12,font=("verdana",12,"bold"),fg="white",bg="navyblue")
         update_btn.grid(row=0,column=1,padx=6,pady=8,sticky=W)
 
-        #Update button
-        del_btn=Button(btn_frame,command=self.action,text="Update",width=12,font=("verdana",12,"bold"),fg="white",bg="navyblue")
+        #Save button
+        del_btn=Button(btn_frame,command=self.action,text="Save",width=12,font=("verdana",12,"bold"),fg="white",bg="navyblue")
         del_btn.grid(row=0,column=2,padx=6,pady=10,sticky=W)
 
         #reset button
@@ -226,23 +219,29 @@ class Attendance:
         
         self.attendanceReport.pack(fill=BOTH,expand=1)
         self.attendanceReport.bind("<ButtonRelease>",self.get_cursor_right)
-        self.fetch_data()
+        self.fetch_sqlData()
+
+
     # =================================update for mysql button================
     #Update button
         del_btn=Button(right_frame,command=self.update_data,text="Update",width=12,font=("verdana",12,"bold"),fg="white",bg="navyblue")
         del_btn.grid(row=0,column=1,padx=6,pady=10,sticky=W)
-    #Update button
+    #delete button
         del_btn=Button(right_frame,command=self.delete_data,text="Delete",width=12,font=("verdana",12,"bold"),fg="white",bg="navyblue")
         del_btn.grid(row=0,column=2,padx=6,pady=10,sticky=W)
+
+
+
+
     # ===============================update function for mysql database=================
     def update_data(self):
-        if self.var_id.get()=="" or self.var_roll.get=="" or self.var_name.get()=="" or self.var_time.get()=="" or self.var_date.get()=="" or self.var_attend.get()=="Status":
+        if self.var_id.get()=="" or self.var_roll.get()=="" or self.var_name.get()=="" or self.var_time.get()=="" or self.var_date.get()=="" or self.var_attend.get()=="Status":
             messagebox.showerror("Error","Please Fill All Fields are Required!",parent=self.root)
         else:
             try:
                 Update=messagebox.askyesno("Update","Do you want to Update this Student Attendance!",parent=self.root)
-                if Update > 0:
-                    conn = mysql.connector.connect(user='root', password='root',host='localhost',database='proj_db',port=8889)
+                if Update:
+                    conn = mysql.connector.connect(user='root', password='root',host='127.0.0.1',database='proj_db',port=3306)
                     mycursor = conn.cursor()
                     mycursor.execute("update stdattendance set std_id=%s,std_roll_no=%s,std_name=%s,std_time=%s,std_date=%s,std_attendance=%s where std_id=%s",( 
                     self.var_id.get(),
@@ -253,15 +252,18 @@ class Attendance:
                     self.var_attend.get(),
                     self.var_id.get()  
                     ))
+                    if mycursor.rowcount == 0:
+                        messagebox.showerror("Error", "No record found with the given ID or no changes were made.", parent=self.root)
+                    else:
+                        conn.commit()
+                        messagebox.showinfo("Success", "Successfully Updated!", parent=self.root)
+                        self.fetch_sqlData()
                 else:
-                    if not Update:
-                        return
-                messagebox.showinfo("Success","Successfully Updated!",parent=self.root)
-                conn.commit()
-                self.fetch_data()
-                conn.close()
+                    return
             except Exception as es:
-                messagebox.showerror("Error",f"Due to: {str(es)}",parent=self.root)
+                messagebox.showerror("Error", f"Due to: {str(es)}", parent=self.root)
+            finally:
+                conn.close()
     # =============================Delete Attendance form my sql============================
     def delete_data(self):
         if self.var_id.get()=="":
@@ -270,7 +272,7 @@ class Attendance:
             try:
                 delete=messagebox.askyesno("Delete","Do you want to Delete?",parent=self.root)
                 if delete>0:
-                    conn = mysql.connector.connect(user='root', password='root',host='localhost',database='proj_db',port=8889)
+                    conn = mysql.connector.connect(user='root', password='root',host='127.0.0.1',database='proj_db',port=3306)
                     mycursor = conn.cursor() 
                     sql="delete from stdattendance where std_id=%s"
                     val=(self.var_id.get(),)
@@ -280,15 +282,15 @@ class Attendance:
                         return
 
                 conn.commit()
-                self.fetch_data()
+                self.fetch_sqlData()
                 conn.close()
                 messagebox.showinfo("Delete","Successfully Deleted!",parent=self.root)
             except Exception as es:
                 messagebox.showerror("Error",f"Due to: {str(es)}",parent=self.root)  
     # ===========================fatch data form mysql attendance===========
 
-    def fetch_data(self):
-        conn = mysql.connector.connect(user='root', password='root',host='localhost',database='proj_db',port=8889)
+    def fetch_sqlData(self):
+        conn = mysql.connector.connect(user='root', password='root',host='127.0.0.1',database='proj_db',port=3306)
         mycursor = conn.cursor()
 
         mycursor.execute("select * from stdattendance")
@@ -379,9 +381,13 @@ class Attendance:
     def action(self):
         if self.var_id.get()=="" or self.var_roll.get=="" or self.var_name.get()=="" or self.var_time.get()=="" or self.var_date.get()=="" or self.var_attend.get()=="Status":
             messagebox.showerror("Error","Please Fill All Fields are Required!",parent=self.root)
+        elif any(char.isdigit() for char in self.var_name.get()):
+            messagebox.showerror("Error", "Student Name should not contain numbers!")
+        elif not self.var_roll.get().isdigit():
+            messagebox.showerror("Error", "Invalid Roll number. Please enter a valid Number.")
         else:
             try:
-                conn = mysql.connector.connect(user='root', password='root',host='localhost',database='proj_db',port=8889)
+                conn = mysql.connector.connect(user='root', password='root',host='127.0.0.1',database='proj_db',port=3306)
                 mycursor = conn.cursor()
                 mycursor.execute("insert into stdattendance values(%s,%s,%s,%s,%s,%s)",(
                 self.var_id.get(),
@@ -393,7 +399,7 @@ class Attendance:
                 ))
 
                 conn.commit()
-                self.fetch_data()
+                self.fetch_sqlData()
                 conn.close()
                 messagebox.showinfo("Success","All Records are Saved in Database!",parent=self.root)
             except Exception as es:
@@ -401,41 +407,7 @@ class Attendance:
 
 
 
-
-
-
-    #     conn = mysql.connector.connect(user='root', password='root',host='localhost',database='proj_db',port=8889)
-    #     mycursor = conn.cursor()
-    #     if messagebox.askyesno("Confirmation","Are you sure you want to save attendance on database?"):
-    #         for i in mydata:
-    #             uid = i[0]
-    #             uroll = i[1]
-    #             uname = i[2]
-    #             utime = i[3]
-    #             udate = i[4]
-    #             uattend = i[5]
-    #             qury = "INSERT INTO stdattendance(std_id, std_roll_no, std_name, std_time, std_date, std_attendance) VALUES(%s,%s,%s,%s,%s,%s)"
-    #             mycursor.execute(qury,(uid,uroll,uname,utime,udate,uattend))
-    #         conn.commit()
-    #         conn.close()
-    #         messagebox.showinfo("Success","Successfully Updated!",parent=self.root)
-    #     else:
-    #         return False
-
-
-
-
-        # 
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     root=Tk()
     obj=Attendance(root)
-    root.mainloop()
+    root.mainloop() 

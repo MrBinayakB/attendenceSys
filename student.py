@@ -1,12 +1,17 @@
+from datetime import datetime
 from tkinter import* 
 from tkinter import ttk
+from tkcalendar import DateEntry
 from PIL import Image,ImageTk
 from tkinter import messagebox
 import mysql.connector
 import cv2
+import re
+
+
 # Testing Connection 
 """
-conn = mysql.connector.connect(user='root', password='root',host='localhost',database='proj_db',port=8889)
+conn = mysql.connector.connect(user='root', password='root',host='127.0.0.1',database='proj_db',port=3306)
 cursor = conn.cursor()
 
 cursor.execute("show databases")
@@ -64,7 +69,7 @@ class Student:
         title_lb1.place(x=0,y=0,width=1366,height=45)
 
         # Creating Frame 
-        main_frame = Frame(bg_img,bd=2,bg="white") #bd mean border 
+        main_frame = Frame(bg_img,bd=2,bg="white")
         main_frame.place(x=5,y=55,width=1355,height=510)
 
         # Left Label Frame 
@@ -76,12 +81,12 @@ class Student:
         current_course_frame.place(x=10,y=5,width=635,height=150)
 
         #label Department
-        dep_label=Label(current_course_frame,text="Department",font=("verdana",12,"bold"),bg="white",fg="navyblue")
+        dep_label=Label(current_course_frame,text="Faculty",font=("verdana",12,"bold"),bg="white",fg="navyblue")
         dep_label.grid(row=0,column=0,padx=5,pady=15)
 
         #combo box 
         dep_combo=ttk.Combobox(current_course_frame,textvariable=self.var_dep,width=15,font=("verdana",12,"bold"),state="readonly")
-        dep_combo["values"]=("Select Department","BSCS","BSIT","BSENG","BSPHY","BSMATH")
+        dep_combo["values"]=("Select Faculty","Faculty of Management","Faculty of Science and Technology","Faculty of Law","Faculty of Education","BE civil")
         dep_combo.current(0)
         dep_combo.grid(row=0,column=1,padx=5,pady=15,sticky=W)
 
@@ -93,19 +98,19 @@ class Student:
 
         #combo box 
         cou_combo=ttk.Combobox(current_course_frame,textvariable=self.var_course,width=15,font=("verdana",12,"bold"),state="readonly")
-        cou_combo["values"]=("Select Course","SE","FE","TE","BE","MS")
+        cou_combo["values"]=("Select Course","BE.Information & Techonology","BE.IT","BE.Civi","BE.Mechanical","BE.Electrical ","LLB","BBA")
         cou_combo.current(0)
         cou_combo.grid(row=0,column=3,padx=5,pady=15,sticky=W)
 
         #-------------------------------------------------------------
 
         #label Year
-        year_label=Label(current_course_frame,text="Year",font=("verdana",12,"bold"),bg="white",fg="navyblue")
+        year_label=Label(current_course_frame,text="Batch",font=("verdana",12,"bold"),bg="white",fg="navyblue")
         year_label.grid(row=1,column=0,padx=5,sticky=W)
 
         #combo box 
         year_combo=ttk.Combobox(current_course_frame,textvariable=self.var_year,width=15,font=("verdana",12,"bold"),state="readonly")
-        year_combo["values"]=("Select Year","2017-21","2018-22","2019-23","2020-24","2021-25")
+        year_combo["values"]=("Select Year","2019","2020","2021","2022","2023","2024","2025")
         year_combo.current(0)
         year_combo.grid(row=1,column=1,padx=5,pady=15,sticky=W)
 
@@ -117,7 +122,7 @@ class Student:
 
         #combo box 
         year_combo=ttk.Combobox(current_course_frame,textvariable=self.var_semester,width=15,font=("verdana",12,"bold"),state="readonly")
-        year_combo["values"]=("Select Semester","Semester-1","Semester-2","Semester-3","Semester-4","Semester-5","Semester-6","Semester-7","Semester-8")
+        year_combo["values"]=("Select Semester","I","II","III","IV","V","VI","VII","VIII")
         year_combo.current(0)
         year_combo.grid(row=1,column=3,padx=5,pady=15,sticky=W)
 
@@ -144,7 +149,7 @@ class Student:
         student_div_label.grid(row=1,column=0,padx=5,pady=5,sticky=W)
 
         div_combo=ttk.Combobox(class_Student_frame,textvariable=self.var_div,width=13,font=("verdana",12,"bold"),state="readonly")
-        div_combo["values"]=("Morning","Evening")
+        div_combo["values"]=("Morning","Day","Evening")
         div_combo.current(0)
         div_combo.grid(row=1,column=1,padx=5,pady=5,sticky=W)
 
@@ -165,27 +170,41 @@ class Student:
         gender_combo.current(0)
         gender_combo.grid(row=2,column=1,padx=5,pady=5,sticky=W)
 
-        #Date of Birth
-        student_dob_label = Label(class_Student_frame,text="DOB:",font=("verdana",12,"bold"),fg="navyblue",bg="white")
-        student_dob_label.grid(row=2,column=2,padx=5,pady=5,sticky=W)
+     #Date of Birth
+        class_Date_frame = LabelFrame(class_Student_frame,bg="white", bd=0)
+        class_Date_frame.grid(row=2, column=2, padx=5, pady=5, sticky=W) 
+
+        student_dob_label = Label(class_Date_frame,text="DOB:",font=("verdana",12,"bold"),fg="navyblue",bg="white")
+        student_dob_label.grid(row=0,column=0,padx=5,pady=5,sticky=W)
 
         student_dob_entry = ttk.Entry(class_Student_frame,textvariable=self.var_dob,width=15,font=("verdana",12,"bold"))
-        student_dob_entry.grid(row=2,column=3,padx=5,pady=5,sticky=W)
+        student_dob_entry.grid(row=2,column=3,padx=5,pady=5,sticky="")
+        
+        calender_img=Image.open(r"Images_GUI/calander_icon.jpg")
+        calender_img=calender_img.resize((16,16),Image.Resampling.LANCZOS)
+        self.calender_icon = ImageTk.PhotoImage(calender_img)
+    
+        pick_date_label = Label(class_Student_frame, image=self.calender_icon, bg="white", cursor="hand2")
+        pick_date_label.grid(row=2, column=3,stick=E,padx=5 , pady=5)
+
+        pick_date_label.bind("<Button-1>", self.pick_date)
 
         #Email
         student_email_label = Label(class_Student_frame,text="Email:",font=("verdana",12,"bold"),fg="navyblue",bg="white")
         student_email_label.grid(row=3,column=0,padx=5,pady=5,sticky=W)
 
-        student_email_entry = ttk.Entry(class_Student_frame,textvariable=self.var_email,width=15,font=("verdana",12,"bold"))
+        student_email_entry = ttk.Entry(class_Student_frame,textvariable=self.var_email,width=15,font=("verdana",12,"bold"), background="red")
         student_email_entry.grid(row=3,column=1,padx=5,pady=5,sticky=W)
+
 
         #Phone Number
         student_mob_label = Label(class_Student_frame,text="Mob-No:",font=("verdana",12,"bold"),fg="navyblue",bg="white")
         student_mob_label.grid(row=3,column=2,padx=5,pady=5,sticky=W)
 
-        student_mob_entry = ttk.Entry(class_Student_frame,textvariable=self.var_mob,width=15,font=("verdana",12,"bold"))
+        validation=self.root.register(self.validate_mob_number)
+        student_mob_entry = ttk.Entry(class_Student_frame,textvariable=self.var_mob,width=15,font=("verdana",12,"bold") , validate="key", validatecommand=(validation, '%P'))
         student_mob_entry.grid(row=3,column=3,padx=5,pady=5,sticky=W)
-
+       
         #Address
         student_address_label = Label(class_Student_frame,text="Address:",font=("verdana",12,"bold"),fg="navyblue",bg="white")
         student_address_label.grid(row=4,column=0,padx=5,pady=5,sticky=W)
@@ -326,10 +345,62 @@ class Student:
         self.student_table.pack(fill=BOTH,expand=1)
         self.student_table.bind("<ButtonRelease>",self.get_cursor)
         self.fetch_data()
-# ==================Function Decleration==============================
+#ddate picker
+
+    def pick_date(self,event=None):
+        # Function to open the date picker and update the selected date
+        top = Toplevel(self.root)  # Create a new top-level window
+        cal = DateEntry(top, width=12, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        cal.pack(padx=10, pady=10)
+        def on_date_select():
+                selected_date = cal.get_date()
+                self.var_dob.set(selected_date)  
+                top.destroy() 
+        confirm_button = ttk.Button(top, text="OK", command=on_date_select)
+        confirm_button.pack(pady=10)
+
+# validation functions 
+    def validate_mob_number(self, new_value):
+        # Check if the new value is empty or contains only digits
+        if new_value.isdigit() or new_value == "":
+            return True
+        else:
+            return False
+    def validate_date_format(self,date_str):
+        try:
+            datetime.strptime(date_str, '%Y-%m-%d')
+            return True
+        except ValueError:
+            print("Invalid date format. Please enter a date in the format YYYY-MM-DD.")
+            return False
+# =================Function Decleration==============================
     def add_data(self):
+        email_regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         if self.var_dep.get()=="Select Department" or self.var_course.get=="Select Course" or self.var_year.get()=="Select Year" or self.var_semester.get()=="Select Semester" or self.var_std_id.get()=="" or self.var_std_name.get()=="" or self.var_div.get()=="" or self.var_roll.get()=="" or self.var_gender.get()=="" or self.var_dob.get()=="" or self.var_email.get()=="" or self.var_mob.get()=="" or self.var_address.get()=="" or self.var_teacher.get()=="":
             messagebox.showerror("Error","Please Fill All Fields are Required!",parent=self.root)#show error in same window
+        
+     # Validate phone number and roll number to be non-negative integers
+        elif len(self.var_mob.get()) != 10:
+            messagebox.showerror("Error", "Invalid mobile number - must be 10 digits", parent=self.root)
+        elif not self.var_roll.get().isdigit() or int(self.var_roll.get()) < 0:
+            messagebox.showerror("Error", "Roll number must be a non-negative integer!", parent=self.root)
+    
+    # Validate date of birth format (YYYY-MM-DD)
+        elif not self.validate_date_format(self.var_dob.get()):
+            messagebox.showerror("Error", "Date of Birth must be in format YYYY-MM-DD!", parent=self.root)
+
+    # validate student name 
+        elif any(char.isdigit() for char in self.var_std_name.get()):
+            messagebox.showerror("Error", " Student Name should not contain numbers!")
+        
+   #    validate the teacher name 
+        elif any(char.isdigit() for char in self.var_teacher.get()):
+            messagebox.showerror("Error", " Teacher Name should not contain numbers!")  
+
+    #   email validation
+        elif not re.match(email_regex, self.var_email.get()):
+            messagebox.showerror("Error", "Invalid Email Address!")
+
         else:
             try:
                 conn = mysql.connector.connect(user='root', password='root',host='127.0.0.1',database='proj_db',port='3306')
